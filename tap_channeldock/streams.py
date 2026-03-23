@@ -67,14 +67,17 @@ class ProductsStream(ChanneldockStream):
         params["sort_attr"] = "stocking_date"
         params["sort_dir"] = "ASC"
 
+        first_page = (next_page_token or 1) == 1
         bookmark_value = self.get_starting_replication_key_value(context)
         if bookmark_value:
             params["start_date"] = bookmark_value
-            self.logger.info(f"[{self.name}] start_date: {bookmark_value}")
+            if first_page:
+                self.logger.info(f"[{self.name}] start_date: {bookmark_value}")
 
         self._current_end_date = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         params["end_date"] = self._current_end_date
-        self.logger.info(f"[{self.name}] end_date: {self._current_end_date}")
+        if first_page:
+            self.logger.info(f"[{self.name}] end_date: {self._current_end_date}")
 
         return params
 
@@ -136,7 +139,7 @@ class SuppliersStream(ChanneldockStream):
         next_page_token: int | None,
     ) -> dict[str, t.Any]:
         """Return pagination params."""
-        return {"page": next_page_token or 1}
+        return {"page": next_page_token or 1, "page_size": self.page_size}
 
 
 class OrdersStream(ChanneldockStream):
@@ -214,19 +217,23 @@ class OrdersStream(ChanneldockStream):
     ) -> dict[str, t.Any]:
         params: dict[str, t.Any] = {
             "page": next_page_token or 1,
+            "page_size": self.page_size,
             "order_status": "ALL",
             "sort_attr": "updated_at",
             "sort_dir": "asc",
         }
 
+        first_page = (next_page_token or 1) == 1
         bookmark_value = self.get_starting_replication_key_value(context)
         if bookmark_value:
             params["updated_at_from"] = bookmark_value
-            self.logger.info(f"[{self.name}] updated_at_from: {bookmark_value}")
+            if first_page:
+                self.logger.info(f"[{self.name}] updated_at_from: {bookmark_value}")
 
         self._current_end_date = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         params["updated_at_to"] = self._current_end_date
-        self.logger.info(f"[{self.name}] updated_at_to: {self._current_end_date}")
+        if first_page:
+            self.logger.info(f"[{self.name}] updated_at_to: {self._current_end_date}")
 
         return params
 
@@ -289,20 +296,25 @@ class InboundDeliveriesStream(ChanneldockStream):
     ) -> dict[str, t.Any]:
         params: dict[str, t.Any] = {
             "page": next_page_token or 1,
+            "page_size": self.page_size,
             "sort_attr": "updated_at",
             "sort_dir": "ASC",
         }
 
+        first_page = (next_page_token or 1) == 1
         bookmark_value = self.get_starting_replication_key_value(context)
         if bookmark_value:
             params["updated_at"] = bookmark_value
-            self.logger.info(f"[{self.name}] updated_at: {bookmark_value}")
+            if first_page:
+                self.logger.info(f"[{self.name}] updated_at: {bookmark_value}")
 
         params["delivery_type"] = "inbound"
-        self.logger.info(f"[{self.name}] delivery_type: inbound")
+        if first_page:
+            self.logger.info(f"[{self.name}] delivery_type: inbound")
 
         self._current_end_date = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-        self.logger.info(f"[{self.name}] end_date: {self._current_end_date}")
+        if first_page:
+            self.logger.info(f"[{self.name}] end_date: {self._current_end_date}")
 
         return params
 
@@ -366,20 +378,25 @@ class OutboundDeliveriesStream(ChanneldockStream):
     ) -> dict[str, t.Any]:
         params: dict[str, t.Any] = {
             "page": next_page_token or 1,
+            "page_size": self.page_size,
             "sort_attr": "updated_at",
             "sort_dir": "ASC",
         }
 
+        first_page = (next_page_token or 1) == 1
         bookmark_value = self.get_starting_replication_key_value(context)
         if bookmark_value:
             params["updated_at"] = bookmark_value
-            self.logger.info(f"[{self.name}] updated_at: {bookmark_value}")
+            if first_page:
+                self.logger.info(f"[{self.name}] updated_at: {bookmark_value}")
 
         params["delivery_type"] = "outbound"
-        self.logger.info(f"[{self.name}] delivery_type: outbound")
+        if first_page:
+            self.logger.info(f"[{self.name}] delivery_type: outbound")
 
         self._current_end_date = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-        self.logger.info(f"[{self.name}] end_date: {self._current_end_date}")
+        if first_page:
+            self.logger.info(f"[{self.name}] end_date: {self._current_end_date}")
 
         return params
 

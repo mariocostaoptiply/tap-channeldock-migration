@@ -21,33 +21,26 @@ if t.TYPE_CHECKING:
 class ChanneldockPaginator(BaseAPIPaginator[int]):
     """Page-based paginator for Channeldock API."""
 
-    PAGE_SIZE = 50
-
     def __init__(self, start_value: int = 1) -> None:
         super().__init__(start_value)
         self._page = start_value
 
     def get_next(self, response: requests.Response) -> int | None:
-        """Resolve next page from response. Works with any endpoint (products, suppliers, etc.)."""
+        """Request the next page until the entity list in the response is empty."""
         try:
             data = response.json()
         except Exception:
             return None
-        
+
         if not isinstance(data, dict):
             return None
 
-        # API uses {entity}_count + {entity} array (e.g. products_count/products)
-        records_count = 0
-        records_list = []
-        
-        for key in data:
-            if key.endswith("_count") and isinstance(data[key], int):
-                records_count = data[key]
-            elif isinstance(data[key], list) and key not in ("response", "page", "page_size"):
-                records_list = data[key]
+        records_list: list[t.Any] = []
+        for key, value in data.items():
+            if isinstance(value, list) and key not in ("response", "page", "page_size"):
+                records_list = value
 
-        if records_count == 0 or len(records_list) < self.PAGE_SIZE:
+        if len(records_list) == 0:
             return None
 
         self._page += 1
@@ -85,6 +78,7 @@ class ChanneldockStream(RESTStream[int]):
     ) -> dict[str, t.Any]:
         params: dict[str, t.Any] = {
             "page": next_page_token or 1,
+            "page_size": self.page_size,
         }
 
         start_date = self.config.get("start_date")
@@ -107,9 +101,9 @@ class ChanneldockStream(RESTStream[int]):
                 return
 
         records = list(extract_jsonpath(self.records_jsonpath, input=data))
-        products_count = data.get("products_count", len(records)) if isinstance(data, dict) else len(records)
-        self.logger.info(f"Page returned {products_count} records")
-        
+        page_n = len(records)
+        self.logger.info(f"Page returned {page_n} records")
+
         yield from records
 
     def validate_response(self, response: requests.Response) -> None:
