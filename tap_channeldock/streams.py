@@ -56,6 +56,7 @@ class ProductsStream(ChanneldockStream):
         th.Property("updated_at", th.DateTimeType),
         th.Property("tags", th.StringType),
         th.Property("child_products", th.StringType),
+        th.Property("stock_location_data", th.StringType),
     ).to_dict()
 
     def get_url_params(
@@ -66,6 +67,7 @@ class ProductsStream(ChanneldockStream):
         params = super().get_url_params(context, next_page_token)
         params["sort_attr"] = "stocking_date"
         params["sort_dir"] = "ASC"
+        params["include_stock_location_data"] = "true"
 
         first_page = (next_page_token or 1) == 1
         bookmark_value = self.get_starting_replication_key_value(context)
@@ -89,7 +91,7 @@ class ProductsStream(ChanneldockStream):
         if not row:
             return None
 
-        for field in ["tags", "child_products"]:
+        for field in ["tags", "child_products", "stock_location_data"]:
             if field in row and isinstance(row[field], (list, dict)):
                 row[field] = json.dumps(row[field])
             elif field not in row:
